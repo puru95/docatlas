@@ -21,8 +21,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ProceduresTableSeeder::class);
         $this->call(SymptomsTableSeeder::class);
         $this->call(SymptomMapTableSeeder::class);
-        $this->call(TreatmentPlansTableSeeder::class);
         $this->call(UsersTableSeeder::class);
-        $this->call(UserInteractionsTableSeeder::class);
     }
 }
