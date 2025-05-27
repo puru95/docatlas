@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DiagnosisController;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ Route::prefix('auth/v1')->group(function () {
 });
 
 Route::middleware('auth:api')->prefix('v1')->group(function () {
-    Route::post('/medicines/search', [DiagnosisController::class, 'getMedicinesData']);
+    Route::post('/medicines/search', [AnalysisController::class, 'getMedicinesData']);
     Route::post('/symptoms/search', [DiagnosisController::class, 'getSymptomsData']);
     Route::post('/getDiseaseBySymptoms', [DiagnosisController::class, 'getDiseaseBySymptoms']);
     Route::post('/getDiseaseDetails', [DiagnosisController::class, 'getDiseaseDetails']);

@@ -19,35 +19,6 @@ class DiagnosisController extends BaseController
 {
     use ApiResponse;
 
-    public function getMedicinesData(Request $request)
-    {
-
-        try {
-
-            $query = $request->search_text;
-
-            if (!$query) {
-                return $this->error('Search query is required.', 400);
-            }
-
-            $data = DB::table('medicines')->select('id', 'name')
-                ->where('name', 'like', "%$query%")
-                ->orWhere('salt', 'like', "%$query%")
-                ->orWhere('category', 'like', "%$query%")
-                ->get();
-
-            $responseData = [
-                "total_count" => count($data),
-                "search_response" => $data
-            ];
-
-            return $this->success($responseData, 'Users fetched successfully');
-        } catch (\Throwable $e) {
-
-            $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());
-        }
-    }
-
     public function getSymptomsData(Request $request)
     {
 
@@ -258,7 +229,7 @@ class DiagnosisController extends BaseController
             'thread_id' => 'required',
         ]);
 
-        $assistantId = 'asst_whe6Emf9E2LY2lUL6rNoHGT1'; // You create this in OpenAI dashboard
+        $assistantId = 'asst_beTFM0os8c0NYXuPn4CmUak1'; // You create this in OpenAI dashboard
         $threadId = $request['thread_id'];
         $answers = $request['answers'];
 

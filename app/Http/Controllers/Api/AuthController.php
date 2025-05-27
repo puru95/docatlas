@@ -36,7 +36,7 @@ class AuthController extends BaseController
 
         // DB::table('disease_clinical_data')->truncate();
         // $data = DB::table('diseases')->get();
-        $data = DB::table('disease_clinical_data')->get();
+        // $data = DB::table('disease_clinical_data')->get();
         // dd($data);
 
         // try {
