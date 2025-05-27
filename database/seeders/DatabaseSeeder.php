@@ -8,19 +8,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(DiseasesTableSeeder::class);
-        $this->call(DiseaseClinicalDataTableSeeder::class);
-        $this->call(DiseaseSymptomsTableSeeder::class);
-        $this->call(LabTestsTableSeeder::class);
-        $this->call(MedicinesTableSeeder::class);
-        $this->call(MigrationsTableSeeder::class);
-        $this->call(OauthAccessTokensTableSeeder::class);
-        $this->call(OauthClientsTableSeeder::class);
-        $this->call(OauthPersonalAccessClientsTableSeeder::class);
-        $this->call(PersonalAccessTokensTableSeeder::class);
-        $this->call(ProceduresTableSeeder::class);
-        $this->call(SymptomsTableSeeder::class);
-        $this->call(SymptomMapTableSeeder::class);
-        $this->call(UsersTableSeeder::class);
+        $this->call(DiseasesSeeder::class);
+        // $this->call(DiseaseClinicalDataSeeder::class);
+        // $this->call(DiseaseSymptomsSeeder::class);
+        // $this->call(LabTestsSeeder::class);
+        // $this->call(MedicinesSeeder::class);
+        // $this->call(OauthAccessTokensSeeder::class);
+        // $this->call(OauthClientsSeeder::class);
+        // $this->call(OauthPersonalAccessClientsSeeder::class);
+        // $this->call(PersonalAccessTokensSeeder::class);
+        // $this->call(ProceduresSeeder::class);
+        // $this->call(SymptomsSeeder::class);
+        // $this->call(SymptomMapSeeder::class);
+        // $this->call(TreatmentPlansSeeder::class);
+        // $this->call(UsersSeeder::class);
+        // $this->call(UserInteractionsSeeder::class);
     }
 }

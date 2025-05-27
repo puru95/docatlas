@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends BaseController
@@ -16,8 +17,12 @@ class AuthController extends BaseController
     // Register
     public function register(Request $request)
     {
+        // DB::table('diseases')->truncate();
+        // $data = DB::table('diseases')->get();
 
-        try {
+        // dd($data);
+
+        // try {
             $validator = Validator::make($request->all(), [
                 'name'     => 'required|string|max:255',
                 'email'    => 'required|email|unique:users',
@@ -41,10 +46,10 @@ class AuthController extends BaseController
             $token = $user->createToken('appToken')->accessToken;
 
             return $this->success($token, 'User registered successfully');
-        } catch (\Throwable $e) {
+        // } catch (\Throwable $e) {
 
-            $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());
-        }
+        //     $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());
+        // }
     }
 
     // Login
