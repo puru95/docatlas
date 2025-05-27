@@ -187,7 +187,7 @@ class DiagnosisController extends BaseController
 
         $input = implode(',', $symptoms);
         $assistantId = 'asst_whe6Emf9E2LY2lUL6rNoHGT1'; // You create this in OpenAI dashboard
-        $response = $ai->chat('I have ' . $input, $assistantId, 'thread_oqenEwMDjb8UXkXw73hHHWTQ');
+        $response = $ai->chat('I have ' . $input, $assistantId, null);
 
         $threadId = $response['thread_id'];
         $assistantMessage = collect($response['messages'])

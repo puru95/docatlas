@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends BaseController
@@ -17,35 +18,51 @@ class AuthController extends BaseController
     // Register
     public function register(Request $request)
     {
-        // DB::table('diseases')->truncate();
-        // $data = DB::table('diseases')->get();
+
+        // $data = DB::table('disease_clinical_data')->get();
+        // $jsonData = json_encode($data, JSON_PRETTY_PRINT);
+        // Storage::disk('local')->put('data.json', $jsonData);
+
+        // $content = Storage::disk('local')->get('data.json');
+
+        // $data = json_decode($content, true);
+
 
         // dd($data);
 
+        // DB::table('disease_clinical_data')->insert(
+        //     $data
+        // );
+
+        // DB::table('disease_clinical_data')->truncate();
+        // $data = DB::table('diseases')->get();
+        $data = DB::table('disease_clinical_data')->get();
+        // dd($data);
+
         // try {
-            $validator = Validator::make($request->all(), [
-                'name'     => 'required|string|max:255',
-                'email'    => 'required|email|unique:users',
-                'password' => 'required|min:6'
-            ]);
+        $validator = Validator::make($request->all(), [
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users',
+            'password' => 'required|min:6'
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-            $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => bcrypt($request->password)
-            ]);
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => bcrypt($request->password)
+        ]);
 
-            $token = $user->createToken('appToken')->accessToken;
+        $token = $user->createToken('appToken')->accessToken;
 
-            return $this->success($token, 'User registered successfully');
+        return $this->success($token, 'User registered successfully');
         // } catch (\Throwable $e) {
 
         //     $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());
