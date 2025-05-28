@@ -37,6 +37,8 @@ Route::prefix('auth/v1')->group(function () {
 
 Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/medicines/search', [AnalysisController::class, 'getMedicinesData']);
+    Route::post('/diseases/search', [DiagnosisController::class, 'getDiseaseSearchData']);
+    Route::post('/salts/search', [AnalysisController::class, 'getSaltsData']);
     Route::post('/symptoms/search', [DiagnosisController::class, 'getSymptomsData']);
     Route::post('/getDiseaseBySymptoms', [DiagnosisController::class, 'getDiseaseBySymptoms']);
     Route::post('/getDiseaseDetails', [DiagnosisController::class, 'getDiseaseDetails']);

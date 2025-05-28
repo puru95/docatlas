@@ -157,53 +157,65 @@ class DiagnosisController extends BaseController
         }
 
         $input = implode(',', $symptoms);
-        $assistantId = 'asst_whe6Emf9E2LY2lUL6rNoHGT1'; // You create this in OpenAI dashboard
+        $assistantId = 'asst_beTFM0os8c0NYXuPn4CmUak1'; // You create this in OpenAI dashboard
         $response = $ai->chat('I have ' . $input, $assistantId, null);
 
         $threadId = $response['thread_id'];
+        // dd($response);
         $assistantMessage = collect($response['messages'])
             ->firstWhere('role', 'assistant')['content'][0]['text']['value'];
+        // dd(json_decode($assistantMessage));
 
-        // 1. Extract questions using regex
-        preg_match_all('/\d+\.\s(.+?)\n((?:\s+- .+\n)+)/', $assistantMessage, $matches, PREG_SET_ORDER);
-
+        //         $checkType = json_decode($assistantMessage);
         $quesSet = [];
 
-        foreach ($matches as $index => $match) {
-            $questionText = trim($match[1]);
-            $optionsRaw = explode("\n", trim($match[2]));
 
-            $options = array_map(function ($option) {
-                return trim(preg_replace('/^- /', '', $option));
-            }, $optionsRaw);
-
-            $quesSet[$index]['question'] = $questionText;
+        // dd($checkType);
+        // if (is_array($checkType)) {
+        $matches = json_decode($assistantMessage, true);
+        // echo "<pre>";
+        // print_r($matches);
+        foreach ($matches['questions'] as $index => $match) {
+        //      echo "<pre>";
+        // print_r($matches);
+        // dd($match);
+            $quesSet[$index]['question'] = $match['question'];
             $quesSet[$index]['sequence_no'] = $index + 1;
-            $quesSet[$index]['options'] = $options;
-
+            $quesSet[$index]['options'] = $match['options'];
+        
             DB::table('user_interactions')->insert([
                 'thread_id'       => $threadId,
-                'user_id'         =>$userId,
+                'user_id'         => $userId,
                 'sequence_no'     => $index + 1,
-                'question'        => $questionText,
-                'options'         => json_encode($options),
+                'question'        => $match['question'],
+                'options'         => json_encode($match['options']),
             ]);
         }
+        // } else {
+        //     // 1. Extract questions using regex
+        //     preg_match_all('/\d+\.\s(.+?)\n((?:\s+- .+\n)+)/', $assistantMessage, $matches, PREG_SET_ORDER);
 
-        // $myData = DB::table('user_interactions')->select('*')->where('user_id', 1)->where('thread_id', 'thread_oqenEwMDjb8UXkXw73hHHWTQ')->get();
+        //     foreach ($matches as $index => $match) {
+        //         $questionText = trim($match[1]);
+        //         $optionsRaw = explode("\n", trim($match[2]));
 
-        // foreach ($myData as $index => $value) {
-        //     $quesSet[$index]['question'] = $value->question;
-        //     $quesSet[$index]['sequence_no'] = $value->sequence_no;
-        //     $quesSet[$index]['options'] = json_decode($value->options);
+        //         $options = array_map(function ($option) {
+        //             return trim(preg_replace('/^- /', '', $option));
+        //         }, $optionsRaw);
+
+        //         $quesSet[$index]['question'] = $questionText;
+        //         $quesSet[$index]['sequence_no'] = $index + 1;
+        //         $quesSet[$index]['options'] = $options;
+
+        //         DB::table('user_interactions')->insert([
+        //             'thread_id'       => $threadId,
+        //             'user_id'         => $userId,
+        //             'sequence_no'     => $index + 1,
+        //             'question'        => $questionText,
+        //             'options'         => json_encode($options),
+        //         ]);
+        //     }
         // }
-
-        // $result = [
-        //     "total_questions" => count($myData),
-        //     'user_id' => $userId,
-        //     'thread_id' => 'thread_oqenEwMDjb8UXkXw73hHHWTQ',
-        //     "ques_data" => $quesSet
-        // ];
 
         $result = [
             "total_questions" => count($matches),
@@ -224,6 +236,7 @@ class DiagnosisController extends BaseController
 
     public function submitDiagnosisAnswers(Request $request, OpenAIAssistantService $ai)
     {
+
         $request->validate([
             'answers' => 'required',
             'thread_id' => 'required',
@@ -241,9 +254,10 @@ class DiagnosisController extends BaseController
 
         // dd($answerString);
 
-        $result = $ai->chat($answerString, $assistantId, $threadId);
+        $result = $ai->chat($answerString, $assistantId, $threadId, 'json');
 
         $assistantMessage = collect($result['messages'])->firstWhere('role', 'assistant')['content'][0]['text']['value'];
+        // dd(json_decode($assistantMessage));
         // dd($assistantMessage);
         $userId = Auth::user()->id;
 
@@ -254,12 +268,65 @@ class DiagnosisController extends BaseController
                 'treatment_plan' => $assistantMessage
             ]);
 
+        $decoded = json_decode($assistantMessage, true); // true = associative array
+
+        $structuredArray = [];
+
+        foreach ($decoded as $title => $data) {
+            // Extract name and match from the title like "Influenza (Flu) — 90% Match"
+            if (preg_match('/^(.*?)\s+—\s+(\d+)% Match$/', $title, $matches)) {
+                $name = trim($matches[1]);
+                $matchPercentage = (int)$matches[2];
+
+                $structuredArray[] = [
+                    'name' => $name,
+                    'match_percentage' => $matchPercentage,
+                    'category' => $data['Category'] ?? null,
+                    'description' => $data['Description'] ?? null,
+                    'key_symptoms' => $data['Key Symptoms'] ?? [],
+                    'recommended_lab_tests' => $data['Recommended Lab Tests'] ?? [],
+                    'recommended_procedures' => $data['Recommended Procedures'] ?? [],
+                    'recommended_medicines' => $data['Recommended Medicines'] ?? [],
+                    'recommended_salts' => $data['Recommended Salts'] ?? [],
+                    'advice' => $data['Advice'] ?? [],
+                    'follow_up' => $data['Follow-Up'] ?? [],
+                ];
+            }
+        }
+
         $response = [
             'user_id' => $userId,
             'thread_id' => $threadId,
-            "treatment_plan" => $assistantMessage
+            "treatment_plan" => $structuredArray
         ];
 
         return $this->success($response, 'success');
+    }
+
+    public function getDiseaseSearchData(Request $request)
+    {
+
+        try {
+
+            $query = $request['search_text'];
+
+            if (!$query) {
+                return $this->error('Search query is required.', 400);
+            }
+
+            $data = DB::table('diseases')->select('diseases.name as disease_name', 'diseases.id as disease_id', 'description')
+                ->where('diseases.name', 'like', "%$query%")
+                ->get();
+
+            $responseData = [
+                "total_count" => count($data),
+                "search_response" => $data
+            ];
+
+            return $this->success($responseData, 'Users fetched successfully');
+        } catch (\Throwable $e) {
+
+            $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());
+        }
     }
 }

@@ -38,7 +38,7 @@ class OpenAIAssistantService
 
     public function sendMessage(string $threadId, string $message)
     {
-        $response = Http::withHeaders($this->headers())
+        $response = Http::timeout(1000100)->withHeaders($this->headers())
             ->post("{$this->baseUrl}/threads/{$threadId}/messages", [
                 'role' => 'user',
                 'content' => $message,
@@ -47,11 +47,20 @@ class OpenAIAssistantService
         return $response->json();
     }
 
-    public function runAssistant(string $threadId, string $assistantId)
+    public function runAssistant(string $threadId, string $assistantId, string $type)
     {
+        $payload = [
+            'assistant_id' => $assistantId,
+        ];
+    
+        if ($type === 'json') {
+            $payload['instructions'] = 'Please respond in a structured JSON format with the treatment plan.';
+        }
+        
         $response = Http::withHeaders($this->headers())
             ->post("{$this->baseUrl}/threads/{$threadId}/runs", [
                 'assistant_id' => $assistantId,
+                // 'instructions' => 'response in json format',
             ]);
         Log::info("runAssistant - $response");
         return $response->json();
@@ -73,7 +82,7 @@ class OpenAIAssistantService
         return $response->json()['data'] ?? [];
     }
 
-    public function chat(string $userInput, string $assistantId, ?string $threadId = null)
+    public function chat(string $userInput, string $assistantId, ?string $threadId = null, $type='text')
     {
         Log::info("openAI start");
         // Create new thread if not existing
@@ -83,17 +92,16 @@ class OpenAIAssistantService
         $this->sendMessage($threadId, $userInput);
 
         // Run assistant
-        $run = $this->runAssistant($threadId, $assistantId);
+        $run = $this->runAssistant($threadId, $assistantId, $type);
 
         // Polling until the run completes (you may want to use jobs for long runs)
         do {
-            sleep(2);
+            sleep(3);
             $runStatus = $this->checkRunStatus($threadId, $run['id']);
         } while ($runStatus['status'] !== 'completed');
 
         // Get all messages
         $messages = $this->getMessages($threadId);
-
         // Save to DB
         // foreach ($messages as $msg) {
         //     if ($msg['role'] === 'assistant') {
