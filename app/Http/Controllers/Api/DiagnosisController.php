@@ -272,26 +272,43 @@ class DiagnosisController extends BaseController
 
         $structuredArray = [];
 
-        foreach ($decoded as $title => $data) {
-            // Extract name and match from the title like "Influenza (Flu) — 90% Match"
-            if (preg_match('/^(.*?)\s+—\s+(\d+)% Match$/', $title, $matches)) {
-                $name = trim($matches[1]);
-                $matchPercentage = (int)$matches[2];
+        // foreach ($decoded as $title => $data) {
+        //     // Extract name and match from the title like "Influenza (Flu) — 90% Match"
+        //     if (preg_match('/^(.*?)\s+—\s+(\d+)% Match$/', $title, $matches)) {
+        //         $name = trim($matches[1]);
+        //         $matchPercentage = (int)$matches[2];
 
-                $structuredArray[] = [
-                    'name' => $name,
-                    'match_percentage' => $matchPercentage,
-                    'category' => $data['Category'] ?? null,
-                    'description' => $data['Description'] ?? null,
-                    'key_symptoms' => $data['Key Symptoms'] ?? [],
-                    'recommended_lab_tests' => $data['Recommended Lab Tests'] ?? [],
-                    'recommended_procedures' => $data['Recommended Procedures'] ?? [],
-                    'recommended_medicines' => $data['Recommended Medicines'] ?? [],
-                    'recommended_salts' => $data['Recommended Salts'] ?? [],
-                    'advice' => $data['Advice'] ?? [],
-                    'follow_up' => $data['Follow-Up'] ?? [],
-                ];
-            }
+        //         $structuredArray[] = [
+        //             'name' => $name,
+        //             'match_percentage' => $matchPercentage,
+        //             'category' => $data['Category'] ?? null,
+        //             'description' => $data['Description'] ?? null,
+        //             'key_symptoms' => $data['Key Symptoms'] ?? [],
+        //             'recommended_lab_tests' => $data['Recommended Lab Tests'] ?? [],
+        //             'recommended_procedures' => $data['Recommended Procedures'] ?? [],
+        //             'recommended_medicines' => $data['Recommended Medicines'] ?? [],
+        //             'recommended_salts' => $data['Recommended Salts'] ?? [],
+        //             'advice' => $data['Advice'] ?? [],
+        //             'follow_up' => $data['Follow-Up'] ?? [],
+        //         ];
+        //     }
+        // }
+
+        foreach ($decoded['differential_diagnosis'] as $title => $data) {
+            // dd($data['disease_name']);
+            $structuredArray[] = [
+                'name' => isset($data['disease_name']) ? $data['disease_name'] : $data['name'],
+                'match_percentage' => '',
+                'category' => $data['category'] ?? null,
+                'description' => $data['description'] ?? null,
+                'key_symptoms' => $data['key_symptoms'] ?? [],
+                'recommended_lab_tests' => $data['recommended_lab_tests'] ?? [],
+                'recommended_procedures' => $data['recommended_procedures'] ?? [],
+                'recommended_medicines' => $data['recommended_medicines'] ?? [],
+                'recommended_salts' => $data['recommended_salts'] ?? [],
+                'advice' => $data['advice'] ?? [],
+                'follow_up' => $data['follow_up'] ?? [],
+            ];
         }
 
         $response = [
