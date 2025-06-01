@@ -294,22 +294,49 @@ class DiagnosisController extends BaseController
         //     }
         // }
 
-        foreach ($decoded['differential_diagnosis'] as $title => $data) {
-            // dd($data['disease_name']);
-            $structuredArray[] = [
-                'name' => isset($data['disease_name']) ? $data['disease_name'] : $data['name'],
-                'match_percentage' => '',
-                'category' => $data['category'] ?? null,
-                'description' => $data['description'] ?? null,
-                'key_symptoms' => $data['key_symptoms'] ?? [],
-                'recommended_lab_tests' => $data['recommended_lab_tests'] ?? [],
-                'recommended_procedures' => $data['recommended_procedures'] ?? [],
-                'recommended_medicines' => $data['recommended_medicines'] ?? [],
-                'recommended_salts' => $data['recommended_salts'] ?? [],
-                'advice' => $data['advice'] ?? [],
-                'follow_up' => $data['follow_up'] ?? [],
-            ];
+        if(isset($decoded['differential_diagnosis'])) {
+
+            foreach ($decoded['differential_diagnosis'] as $title => $data) {
+                // dd($data['disease_name']);
+                $structuredArray[] = [
+                    'name' => isset($data['disease_name']) ? $data['disease_name'] : $data['name'],
+                    'match_percentage' => '',
+                    'category' => $data['category'] ?? null,
+                    'description' => $data['description'] ?? null,
+                    'key_symptoms' => $data['key_symptoms'] ?? [],
+                    'recommended_lab_tests' => $data['recommended_lab_tests'] ?? [],
+                    'recommended_procedures' => $data['recommended_procedures'] ?? [],
+                    'recommended_medicines' => $data['recommended_medicines'] ?? [],
+                    'recommended_salts' => $data['recommended_salts'] ?? [],
+                    'advice' => $data['advice'] ?? [],
+                    'follow_up' => $data['follow_up'] ?? [],
+                ];
+            }
+
+        } elseif (isset($decoded['diseases'])) {
+            
+            foreach ($decoded['diseases'] as $title => $data) {
+                // dd($data['disease_name']);
+                $structuredArray[] = [
+                    'name' => isset($data['disease_name']) ? $data['disease_name'] : $data['name'],
+                    'match_percentage' => '',
+                    'category' => $data['category'] ?? null,
+                    'description' => $data['description'] ?? null,
+                    'key_symptoms' => $data['key_symptoms'] ?? [],
+                    'recommended_lab_tests' => $data['recommended_lab_tests'] ?? [],
+                    'recommended_procedures' => $data['recommended_procedures'] ?? [],
+                    'recommended_medicines' => $data['recommended_medicines'] ?? [],
+                    'recommended_salts' => $data['recommended_salts'] ?? [],
+                    'advice' => $data['advice'] ?? [],
+                    'follow_up' => $data['follow_up'] ?? [],
+                ];
+            }
+
+        } else {
+            
         }
+
+        
 
         $response = [
             'user_id' => $userId,
