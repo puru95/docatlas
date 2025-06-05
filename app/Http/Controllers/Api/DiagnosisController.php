@@ -313,6 +313,12 @@ class DiagnosisController extends BaseController
                 ];
             }
 
+            $response = [
+                'user_id' => $userId,
+                'thread_id' => $threadId,
+                "treatment_plan" => $structuredArray
+            ];
+
         } elseif (isset($decoded['diseases'])) {
             
             foreach ($decoded['diseases'] as $title => $data) {
@@ -332,17 +338,26 @@ class DiagnosisController extends BaseController
                 ];
             }
 
+            $response = [
+                'user_id' => $userId,
+                'thread_id' => $threadId,
+                "treatment_plan" => $structuredArray
+            ];
+
         } else {
             
+            $response = [
+                'user_id' => $userId,
+                'thread_id' => $threadId,
+                "treatment_plan" => [],
+                "responseData" => $decoded
+            ];
+
         }
 
         
 
-        $response = [
-            'user_id' => $userId,
-            'thread_id' => $threadId,
-            "treatment_plan" => $structuredArray
-        ];
+        
 
         return $this->success($response, 'success');
     }

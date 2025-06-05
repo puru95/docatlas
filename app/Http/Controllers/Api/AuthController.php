@@ -18,7 +18,53 @@ class AuthController extends BaseController
     // Register
     public function register(Request $request)
     {
+        // ini_set('max_execution_time', 300);
 
+        // DB::table('diseases')->where('name', 'Hand Foot and Mouth Disease')->update([
+        //     'name' => 'HFMD (Hand Foot and Mouth Disease)',
+        // ]);
+        // dd('o');
+        // foreach ($myData as $key => $value) {
+            
+        //     DB::table('medicines')->where('id', $value['id'])
+        //         ->update([
+        //             'salt_introduction' => $value['salt_introduction'],
+        //         ]);
+        // }
+        // dd($myData);
+
+        // $data = DB::table('medicines')->select('id','salt', 'salt_introduction')->get();
+
+        // dd($data);
+
+        // $content = Storage::disk('local')->get('disease_medicine_map.json');
+
+        // $data = json_decode($content, true);
+
+        // dd($data['disease_medicine_map']);
+
+        // foreach ($data['disease_medicine_map'] as $key => $value) {
+        //     // dd($key);
+        //     // dd(implode(',' ,$value));
+        //     $salt = [];
+        //     foreach ($value as $k => $val) {
+        //         $saltD = DB::table('medicines')->select('id', 'salt')->where('name', $val)->first();
+        //         if (!isset($saltD->salt)) {
+        //             continue;
+        //         }
+        //         $salt[] = $saltD->salt;
+        //     }
+        //     // dd($salt);
+        //     DB::table('disease_clinical_data')->where('id', $key)
+        //         ->update([
+        //             'salts' => implode(',', $salt),
+        //         ]);
+            // DB::table('disease_clinical_data')->where('id', $key)
+            //     ->update([
+            //         'medicines' => implode(',', $value),
+            //     ]);
+        // }
+        // dd($key);
         // $data = DB::table('disease_clinical_data')->get();
         // $jsonData = json_encode($data, JSON_PRETTY_PRINT);
         // Storage::disk('local')->put('data.json', $jsonData);
@@ -40,6 +86,7 @@ class AuthController extends BaseController
         // dd($data);
 
         // try {
+            
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users',
