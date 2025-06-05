@@ -346,18 +346,36 @@ class DiagnosisController extends BaseController
 
         } else {
             
-            $response = [
-                'user_id' => $userId,
-                'thread_id' => $threadId,
-                "treatment_plan" => [],
-                "responseData" => $decoded
-            ];
+            foreach ($decoded as $key => $value) {
+                if (is_array($value) && isset($value[0]) && (isset($value[0]['disease_name']) || isset($value[0]['name']))) {
+                    foreach ($value as $data) {
+                        $structuredArray[] = [
+                            'name' => $data['disease_name'] ?? $data['name'] ?? '',
+                            'match_percentage' => '',
+                            'category' => $data['category'] ?? null,
+                            'description' => $data['description'] ?? null,
+                            'key_symptoms' => $data['key_symptoms'] ?? [],
+                            'recommended_lab_tests' => $data['recommended_lab_tests'] ?? [],
+                            'recommended_procedures' => $data['recommended_procedures'] ?? [],
+                            'recommended_medicines' => $data['recommended_medicines'] ?? [],
+                            'recommended_salts' => $data['recommended_salts'] ?? [],
+                            'advice' => $data['advice'] ?? [],
+                            'follow_up' => $data['follow_up'] ?? [],
+                        ];
+                    }
+            
+                    $response = [
+                        'user_id' => $userId,
+                        'thread_id' => $threadId,
+                        'treatment_plan' => $structuredArray,
+                        "responseData" => $decoded
+                    ];
+            
+                    break;
+                }
+            }
 
         }
-
-        
-
-        
 
         return $this->success($response, 'success');
     }
