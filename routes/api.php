@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DiagnosisController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\BranchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,5 +48,18 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/getDiseaseDetails', [DiagnosisController::class, 'getDiseaseDetails']);
     Route::post('/getQuestionsByOpenAI', [DiagnosisController::class, 'getQuestionsByOpenAI']);
     Route::post('/submitDiagnosisAnswers', [DiagnosisController::class, 'submitDiagnosisAnswers']);
-    
+
+
+
+    Route::post('/query/branch/search', [BranchController::class, 'list']);
+    Route::post('/cabinOrDesk/search', [BranchController::class, 'getCabinDetails']);
+    Route::get('/query/user/profile/{id}', [AuthController::class, 'show']);
+    Route::post('/query/department/search', [BranchController::class, 'getDepartmentList']);
+    Route::post('/department/search', [BranchController::class, 'getDepartmentList']);
+    Route::post('/query/specialization/search', [BranchController::class, 'getSpecializationList']);
+    Route::post('/query/service/search', [BranchController::class, 'getServiceList']);
+    Route::post('/query/employee/search', [BranchController::class, 'getEmployeeList']);
+    Route::post('/query/patient/search', [BranchController::class, 'getPatientList']);
+    Route::post('/query/doctor/search-list', [BranchController::class, 'getDoctorList']);
+    Route::post('/query/calendar/search', [BranchController::class, 'getDoctorSchedules']);
 });
