@@ -28,6 +28,9 @@ Route::prefix('auth/v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
 
+    Route::post('/oauth-token',    [AuthController::class, 'authLogin']);
+    Route::post('/refresh-token',    [AuthController::class, 'refreshToken']);
+
     Route::middleware('auth:api')->group(function () {
         Route::get('/user',   [AuthController::class, 'user']);
         Route::get('/mediassist/users/{userId?}', [DiagnosisController::class, 'getUserProfile']);

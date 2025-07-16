@@ -7,10 +7,12 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Passport\Token;
 
 class AuthController extends BaseController
 {
@@ -176,5 +178,108 @@ class AuthController extends BaseController
 
             $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());
         }
+    }
+
+    public function authLogin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email'    => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation errors',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $credentials = $request->only('email', 'password');
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        // Generate token
+        $user1 = User::find($user->id);
+        $tokenResult = $user1->createToken('Personal Access Token');
+        $accessToken = $tokenResult->accessToken;
+        $refreshToken = $tokenResult->token->id; // not real refresh token, mock
+
+        // Fake roles payload for example
+        $roles = [
+            [
+                'group_id'     => 1,
+                'hospital_id'  => 10,
+                'branch_id'    => 1,
+                'profile_id'   => 1000,
+                'role'         => 'admin',
+            ],
+            // Add more roles if needed
+        ];
+
+        return response()->json([
+            'access_token'  => $accessToken,
+            'refresh_token' => $refreshToken, // Normally Passport doesn't use refresh tokens by default
+            'token_type'    => 'Bearer',
+            'expires_in'    => config('auth.token_lifetime', 3600),
+            'roles'         => $roles,
+            'user'          => $user,
+        ]);
+    }
+
+    public function refreshToken(Request $request)
+    {
+        $authorizationHeader = $request->header('Authorization');
+
+        if (!$authorizationHeader || !str_starts_with($authorizationHeader, 'Bearer ')) {
+            return response()->json(['message' => 'Missing or invalid Authorization header'], 401);
+        }
+
+        $refreshTokenId = trim(str_replace('Bearer', '', $authorizationHeader));
+        $token = Token::find($refreshTokenId);
+
+        if (!$token || $token->revoked) {
+            return response()->json(['message' => 'Invalid or expired refresh token'], 401);
+        }
+
+        // Revoke old token
+        $token->revoke();
+
+        // Get user and generate new token
+        $user = User::find($token->user_id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $tokenResult = $user->createToken('authToken');
+        $newAccessToken = $tokenResult->accessToken;
+        $newRefreshToken = $tokenResult->token->id;
+
+        // Roles (example)
+        $roles = [
+            [
+                'group_id'     => 1,
+                'hospital_id'  => 10,
+                'branch_id'    => 1,
+                'profile_id'   => 1000,
+                'role'         => 'admin',
+            ],
+        ];
+
+        return response()->json([
+            'access_token' => $newAccessToken,
+            'refresh_token' => $newRefreshToken,
+            'token_type' => 'Bearer',
+            'expires_in' => Carbon::parse($tokenResult->token->expires_at)->toDateTimeString(),
+            'roles' => $roles,
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+        ]);
     }
 }
