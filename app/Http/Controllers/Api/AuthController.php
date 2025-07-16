@@ -27,7 +27,7 @@ class AuthController extends BaseController
         // ]);
         // dd('o');
         // foreach ($myData as $key => $value) {
-            
+
         //     DB::table('medicines')->where('id', $value['id'])
         //         ->update([
         //             'salt_introduction' => $value['salt_introduction'],
@@ -61,10 +61,10 @@ class AuthController extends BaseController
         //         ->update([
         //             'salts' => implode(',', $salt),
         //         ]);
-            // DB::table('disease_clinical_data')->where('id', $key)
-            //     ->update([
-            //         'medicines' => implode(',', $value),
-            //     ]);
+        // DB::table('disease_clinical_data')->where('id', $key)
+        //     ->update([
+        //         'medicines' => implode(',', $value),
+        //     ]);
         // }
         // dd($key);
         // $data = DB::table('disease_clinical_data')->get();
@@ -88,7 +88,7 @@ class AuthController extends BaseController
         // dd($data);
 
         // try {
-            
+
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users',
@@ -281,5 +281,47 @@ class AuthController extends BaseController
             'name' => $user->name,
             'email' => $user->email,
         ]);
+    }
+
+    public function show(int $id)
+    {
+        // ── Dummy profile records ───────────────────
+        $profiles = collect([
+            [
+                'id'               => 1,
+                'name'             => 'Dr. Asha Verma',
+                'email'            => 'asha.verma@example.com',
+                'employee_type_id' => 101,
+                'phone'            => '+91‑98765‑43210',
+                'department'       => 'Cardiology',
+            ],
+            [
+                'id'               => 2,
+                'name'             => 'Nurse Ravi Singh',
+                'email'            => 'ravi.singh@example.com',
+                'employee_type_id' => 202,
+                'phone'            => '+91‑91234‑56789',
+                'department'       => 'Emergency',
+            ],
+            [
+                'id'               => 1000,
+                'name'             => 'Admin Maya Kapoor',
+                'email'            => 'maya.kapoor@example.com',
+                'employee_type_id' => 303,
+                'phone'            => '+91‑99887‑77665',
+                'department'       => 'Administration',
+            ],
+        ]);
+        // ─────────────────────────────────────────────
+
+        $profile = $profiles->firstWhere('id', $id);
+
+        if (! $profile) {
+            return response()->json([
+                'message' => "Profile with ID {$id} not found.",
+            ], 404);
+        }
+
+        return response()->json($profile);   // status 200
     }
 }
