@@ -3,6 +3,8 @@
 namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 trait ApiResponse
 {
@@ -22,5 +24,23 @@ trait ApiResponse
             'message' => $message,
             'data' => $data,
         ], $status);
+    }
+
+    protected function encryptId($id)
+    {
+        try {
+            return Crypt::encryptString($id);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    protected function decryptId($encryptedId)
+    {
+        try {
+            return Crypt::decryptString($encryptedId);
+        } catch (DecryptException $e) {
+            return null; // or handle error
+        }
     }
 }

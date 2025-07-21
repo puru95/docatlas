@@ -1190,4 +1190,22 @@ class BranchController extends BaseController
 
         return response()->json($dummyResponse);
     }
+
+    public function getCountries()
+    {
+        $countries = [
+            ['id' => 1, 'country_name' => 'India', 'iso_code' => 'IN'],
+            ['id' => 2, 'country_name' => 'United States', 'iso_code' => 'US'],
+            ['id' => 3, 'country_name' => 'United Kingdom', 'iso_code' => 'GB'],
+            ['id' => 4, 'country_name' => 'Canada', 'iso_code' => 'CA'],
+            ['id' => 5, 'country_name' => 'Australia', 'iso_code' => 'AU'],
+            ['id' => 6, 'country_name' => 'Germany', 'iso_code' => 'DE'],
+            ['id' => 7, 'country_name' => 'France', 'iso_code' => 'FR'],
+            ['id' => 8, 'country_name' => 'Japan', 'iso_code' => 'JP'],
+            ['id' => 9, 'country_name' => 'Brazil', 'iso_code' => 'BR'],
+            ['id' => 10, 'country_name' => 'South Africa', 'iso_code' => 'ZA'],
+        ];
+
+        return response()->json($countries);
+    }
 }

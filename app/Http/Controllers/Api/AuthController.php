@@ -155,6 +155,7 @@ class AuthController extends BaseController
     {
 
         try {
+
             $request->user()->token()->revoke();
 
             return response()->json([
@@ -217,7 +218,7 @@ class AuthController extends BaseController
                 'hospital_id'  => 10,
                 'branch_id'    => 1,
                 'profile_id'   => 1000,
-                'role'         => 'admin',
+                'role'         => $user->role,
             ],
             // Add more roles if needed
         ];
@@ -227,6 +228,8 @@ class AuthController extends BaseController
             'refresh_token' => $refreshToken, // Normally Passport doesn't use refresh tokens by default
             'token_type'    => 'Bearer',
             'expires_in'    => config('auth.token_lifetime', 3600),
+            'email'         => $user->email,
+            'user_id'       => $user->id,
             'roles'         => $roles,
             'user'          => $user,
         ]);
