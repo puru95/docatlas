@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/documents/upload/image', [DocumentController::class, 'uploadImage']);
     Route::get('/onboarding/{id}', [OnboardingController::class, 'trackStatus']);
     Route::get('/maps/api/countries', [BranchController::class, 'getCountries']);
+    Route::post('query/employee/profile', [BranchController::class, 'getHospitalNames']);
 });
 
 Route::middleware('auth:api')->prefix('v1')->group(function () {
@@ -72,7 +73,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
 
     Route::delete('/session', [AuthController::class, 'logout']);
-
+    
     Route::post('/query/branch/search', [BranchController::class, 'list']);
     Route::post('/cabinOrDesk/search', [BranchController::class, 'getCabinDetails']);
     Route::get('/query/user/profile/{id}', [AuthController::class, 'show']);

@@ -1208,4 +1208,54 @@ class BranchController extends BaseController
 
         return response()->json($countries);
     }
+
+    public function getHospitalNames(Request $request)
+    {
+        $profileIds = $request->all();
+
+        if (!is_array($profileIds) || empty($profileIds)) {
+            return response()->json(['error' => 'Invalid profile ID list'], 400);
+        }
+
+        // Dummy employee-hospital mapping
+        $dummyHospitals = [
+            '1000' => [
+                'id' => '1000',
+                'hospital_id' => 101,
+                'hospital' => [
+                    'id' => 101,
+                    'name' => 'Sunrise Hospital',
+                    'iso_code' => 'IN'
+                ]
+            ],
+            'profile2' => [
+                'id' => 'profile2',
+                'hospital_id' => 102,
+                'hospital' => [
+                    'id' => 102,
+                    'name' => 'Green Valley Clinic',
+                    'iso_code' => 'US'
+                ]
+            ],
+            'profile3' => [
+                'id' => 'profile3',
+                'hospital_id' => 103,
+                'hospital' => [
+                    'id' => 103,
+                    'name' => 'Global Health Center',
+                    'iso_code' => 'UK'
+                ]
+            ]
+        ];
+
+        $result = [];
+
+        foreach ($profileIds as $id) {
+            if (isset($dummyHospitals[$id])) {
+                $result[] = $dummyHospitals[$id];
+            }
+        }
+
+        return response()->json($result);
+    }
 }

@@ -218,7 +218,8 @@ class AuthController extends BaseController
                 'hospital_id'  => 10,
                 'branch_id'    => 1,
                 'profile_id'   => 1000,
-                'role'         => $user->role,
+                // 'role'         => $user->role,
+                'role'         => 'ADMIN',
             ],
             // Add more roles if needed
         ];
