@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\BaseController;
+use App\Mail\SendOtpMail;
+use App\Models\Document;
 use App\Models\HospitalInfo;
 use App\Models\HospitalRegistration;
 use App\Models\Owner;
@@ -41,7 +43,6 @@ class OnboardingController extends BaseController
                 'email' => $email
             ]);
         }
-
     }
 
     public function sendEmailOtp(Request $request)
@@ -68,7 +69,11 @@ class OnboardingController extends BaseController
 
 
             // Send OTP via Mail or Notification
-            // Mail::to($request->email)->send(new SendOtpMail($otp));
+            $data = [
+                'otp' => $otp
+            ];
+            $toEmail = $request->email;
+            Mail::to($toEmail)->send(new SendOtpMail($data));
 
             return response()->json([
                 'success' => true,
@@ -178,7 +183,11 @@ class OnboardingController extends BaseController
             );
 
             // Send OTP via Mail or Notification
-            // Mail::to($request->email)->send(new SendOtpMail($otp));
+            $data = [
+                'otp' => $otp
+            ];
+            $toEmail = $request->email;
+            Mail::to($toEmail)->send(new SendOtpMail($data));
 
             return response()->json([
                 'success' => true,
@@ -242,6 +251,9 @@ class OnboardingController extends BaseController
             'user_type' => $request->user_type,
         ]);
 
+        $user->reference_id = $this->encryptId($user->id);
+        $user->save();
+
         return response()->json([
             'success' => true,
             'message' => 'User registered successfully.',
@@ -273,12 +285,17 @@ class OnboardingController extends BaseController
         $id = $user->id;   // or generate another tracking ID
 
         $signupData = UserInfo::where('user_id', $user->id)->first(); // Example
+        $hospitalReg = HospitalRegistration::where('user_id', $user->id)->first(); // Example
+        $hospitalInfo = HospitalInfo::where('user_id', $user->id)->first(); // Example
 
         return response()->json([
             'status' => $status,
             'id' => $id,
-            'next_step' => '',
+            'trackingId' => $user->reference_id,
+            'next_step' => $user->next_step,
             'signup' => $signupData,
+            'hospital_registration' => $hospitalReg,
+            'company_information' => $hospitalInfo
         ]);
     }
 
@@ -310,6 +327,9 @@ class OnboardingController extends BaseController
         );
 
         $HospitalRegData = HospitalRegistration::where('user_id', $user->id)->first(); // Example
+
+        $user->next_step = 'HOSPITAL_REGISTRATION';
+        $user->save();
 
         return response()->json([
             'message' => 'User Info updated successfully.',
@@ -348,6 +368,9 @@ class OnboardingController extends BaseController
         );
 
         $hospitalInfoData = HospitalInfo::where('user_id', $user->id)->first();
+
+        $user->next_step = 'COMPANY_INFORMATION';
+        $user->save();
 
         return response()->json([
             'status' => 'SUCCESS',
@@ -397,6 +420,9 @@ class OnboardingController extends BaseController
 
         $ownerInfo = Owner::where('user_id', $user->id)->first();
 
+        $user->next_step = 'OWNER_INFORMATION';
+        $user->save();
+
         // Mock data to simulate frontend usage
         return response()->json([
             'status' => $user->status ?? 'PENDING', // or 'DECLINED' to simulate condition
@@ -433,7 +459,7 @@ class OnboardingController extends BaseController
 
         // Mock data to simulate frontend usage
         return response()->json([
-            'id' => $this->encryptId($id)
+            'id' => $user->reference_id
         ]);
     }
 
@@ -441,7 +467,7 @@ class OnboardingController extends BaseController
     {
 
         $id = $this->decryptId($regId);
-        
+
         $user = $id ? User::find($id) : null;
 
         if (!$user) {
@@ -455,4 +481,5 @@ class OnboardingController extends BaseController
             'status' => $user->status, // or 'DECLINED' to simulate condition
         ]);
     }
+
 }

@@ -59,6 +59,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/onboarding/{id}', [OnboardingController::class, 'trackStatus']);
     Route::get('/maps/api/countries', [BranchController::class, 'getCountries']);
     Route::post('query/employee/profile', [BranchController::class, 'getHospitalNames']);
+    Route::get('/documents/by_ids', [DocumentController::class, 'getDocumentsByIds']);
+
 });
 
 Route::middleware('auth:api')->prefix('v1')->group(function () {
