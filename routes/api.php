@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\OnboardingController;
+use App\Http\Controllers\Api\TreatmentManagerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -87,4 +88,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/query/patient/search', [BranchController::class, 'getPatientList']);
     Route::post('/query/doctor/search-list', [BranchController::class, 'getDoctorList']);
     Route::post('/query/calendar/search', [BranchController::class, 'getDoctorSchedules']);
+    Route::post('/query/treatments/treatment-view', [TreatmentManagerController::class, 'fetchAppointments']);
+    Route::get('/query/treatments/treatment-record', [TreatmentManagerController::class, 'getMedicalRecord']);
+    Route::post('/medical-history/search', [TreatmentManagerController::class, 'fetchMedicalHistory']);
 });
