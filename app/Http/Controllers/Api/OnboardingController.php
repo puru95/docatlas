@@ -214,11 +214,19 @@ class OnboardingController extends BaseController
             ->first();
 
         if (!$pendingUser) {
-            return $this->error('Invalid or expired OTP.', 400);
+            return response()->json([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Invalid or expired OTP.'
+            ]);
         }
 
         if ($pendingUser->is_verified) {
-            return $this->success([], 'OTP already verified.');
+            return response()->json([
+                'success' => false,
+                'valid' => false,
+                'message' => 'OTP already verified.'
+            ]);
         }
 
         $pendingUser->update(['is_verified' => true]);
