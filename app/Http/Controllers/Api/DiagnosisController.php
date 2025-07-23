@@ -179,7 +179,7 @@ class DiagnosisController extends BaseController
         //      echo "<pre>";
         // print_r($matches);
         // dd($match);
-            $quesSet[$index]['questions'] = $match['question'];
+            $quesSet[$index]['question'] = $match['question'];
             $quesSet[$index]['sequence_no'] = $index + 1;
             $quesSet[$index]['options'] = $match['options'];
         
