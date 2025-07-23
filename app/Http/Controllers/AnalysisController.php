@@ -32,7 +32,7 @@ class AnalysisController extends Controller
                 "search_response" => $data
             ];
 
-            return $this->success($responseData, 'Users fetched successfully');
+            return $this->success($responseData, 'Medicines fetched successfully');
         } catch (\Throwable $e) {
 
             $this->reportException(__CLASS__ . "/" . __FUNCTION__, $e->getMessage());

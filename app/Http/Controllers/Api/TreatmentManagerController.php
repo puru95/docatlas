@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GuestPatient;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -37,7 +39,7 @@ class TreatmentManagerController extends Controller
                 'patient_image' => null,
                 'appointment_id' => $appointmentId,
                 'otpVerified' => (bool) rand(0, 1),
-                'vitalSignUpdated' => (bool) rand(0, 1),
+                'vitalSignUpdated' => 1,
                 'appointment_status' => $i % 2 === 0 ? 'APPOINTMENT_STARTED' : 'COMPLETED',
                 'service_type' => $i % 2 === 0 ? 'Consultation' : 'Follow-up',
                 'treatmentHistory' => [
@@ -186,5 +188,60 @@ class TreatmentManagerController extends Controller
         ];
 
         return response()->json($dummyData);
+    }
+
+    public function store(Request $request)
+    {
+
+        $groupId = $request->header('X-TREINT-GROUP-ID');
+        $hospitalId = $request->header('X-TREINT-HOSPITAL-ID');
+
+        if (!$groupId || !$hospitalId) {
+            return response()->json([
+                'message' => 'Group Id or Hospital Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'sex' => 'required|in:Male,Female,Other',
+            'age.unit' => 'required|in:YEAR,MONTH',
+            'age.value' => 'required|integer|min:0',
+            'survey_name' => 'required|string', // validated but not stored unless needed
+            'mobile_number' => 'required|string',
+            'country_code' => 'required|string',
+            'source_type' => 'required|string',
+            'source_id' => 'required|uuid',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Invalid data',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $groupId = $request->header('X-TREINT-GROUP-ID');
+        $hospitalId = $request->header('X-TREINT-HOSPITAL-ID');
+
+        $guestInfo = GuestPatient::create([
+            'name' => $request->survey_name,
+            'sex' => $request->sex,
+            'age' => [
+                'unit' => $request->input('age.unit'),
+                'value' => $request->input('age.value')
+            ],
+            'mobile_number' => $request->mobile_number,
+            'country_code' => $request->country_code,
+            'source_type' => $request->source_type,
+            'source_id' => $request->source_id,
+            'group_id' => $groupId,
+            'hospital_id' => $hospitalId,
+        ]);
+
+        return response()->json([
+            'message' => 'Guest patient created successfully',
+            'id' => $guestInfo->id,
+        ], 201);
     }
 }

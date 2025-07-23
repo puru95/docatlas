@@ -91,4 +91,6 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/query/treatments/treatment-view', [TreatmentManagerController::class, 'fetchAppointments']);
     Route::get('/query/treatments/treatment-record', [TreatmentManagerController::class, 'getMedicalRecord']);
     Route::post('/medical-history/search', [TreatmentManagerController::class, 'fetchMedicalHistory']);
+    Route::post('/pulse/create-guest-patient', [TreatmentManagerController::class, 'store']);
+
 });
