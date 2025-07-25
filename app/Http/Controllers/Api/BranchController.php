@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\BaseController;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class BranchController extends BaseController
 {
@@ -35,6 +36,32 @@ class BranchController extends BaseController
         return response()->json([
             'total_count'     => $total,
             'search_response' => $searchResponse,
+        ]);
+    }
+
+    public function listBranches(Request $request)
+    {
+        $pagination = $request->input('pagination', []);
+        $startFrom = $pagination['start_from'] ?? 0;
+        $pageSize = $pagination['page_size'] ?? 10;
+
+        // Dummy total count
+        $totalCount = 250;
+
+        // Generate dummy data for example
+        $branches = [];
+
+        // Limit data generation to requested page_size
+        for ($i = $startFrom; $i < min($startFrom + $pageSize, $totalCount); $i++) {
+            $branches[] = [
+                'id' => (string) Str::uuid(),
+                'name' => "Branch " . ($i + 1),
+            ];
+        }
+
+        return response()->json([
+            'total_count' => $totalCount,
+            'search_response' => $branches,
         ]);
     }
 

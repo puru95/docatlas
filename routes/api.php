@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DiagnosisController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BranchController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\TreatmentManagerController;
@@ -77,6 +78,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     Route::delete('/session', [AuthController::class, 'logout']);
     
+    Route::post('/branch/search', [BranchController::class, 'listBranches']);
     Route::post('/query/branch/search', [BranchController::class, 'list']);
     Route::post('/cabinOrDesk/search', [BranchController::class, 'getCabinDetails']);
     Route::get('/query/user/profile/{id}', [AuthController::class, 'show']);
@@ -92,5 +94,10 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::get('/query/treatments/treatment-record', [TreatmentManagerController::class, 'getMedicalRecord']);
     Route::post('/medical-history/search', [TreatmentManagerController::class, 'fetchMedicalHistory']);
     Route::post('/pulse/create-guest-patient', [TreatmentManagerController::class, 'store']);
+
+    Route::post('/dashboard/revenue/stat', [DashboardController::class, 'getTotalCount']);
+    Route::post('/dashboard/revenue', [DashboardController::class, 'getRevenueData']);
+    Route::post('/dashboard/appointment', [DashboardController::class, 'getAppointmentData']);
+    Route::post('/dashboard/workload', [DashboardController::class, 'getWorkloadData']);
 
 });
