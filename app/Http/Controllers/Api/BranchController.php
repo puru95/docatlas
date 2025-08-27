@@ -3,35 +3,105 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\BaseController;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Branch;
+use App\Models\Building;
+use App\Models\Cabin;
+use App\Models\Floor;
+use App\Models\Room;
+use App\Models\Wing;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class BranchController extends BaseController
 {
     use ApiResponse;
 
+    public function createBranch(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Create Branch
+            $branch = Branch::create([
+                'name' => $request->branch['name'],
+                'image_id' => $request->branch['image_id'] ?? null
+            ]);
+
+            // Create Address
+            $branch->address()->create($request->address);
+
+            // Create Week Schedule
+            $weekSchedule = $branch->weekSchedule()->create([
+                'entity_type' => $request->week_schedule['entity_type'],
+                'is_24_hours' => $request->week_schedule['is_24_hours']
+            ]);
+
+            foreach ($request->week_schedule['day_schedule'] as $day) {
+                $daySchedule = $weekSchedule->daySchedules()->create([
+                    'day_of_week' => $day['day_of_week'],
+                    'day_off' => $day['day_off'],
+                ]);
+
+                foreach ($day['slots'] as $slot) {
+                    $daySchedule->slots()->create([
+                        'start_time_utc' => $slot['start_time_utc'],
+                        'end_time_utc' => $slot['end_time_utc'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $branchData = Branch::with('address', 'weekSchedule.daySchedules.slots')->find($branch->id);
+
+            return response()->json([
+                'total_count'     => $branchData->count(),
+                'message' => 'Branch created successfully',
+                'search_response' => $branchData,
+            ]);
+
+            // return response()->json(['message' => 'Branch created successfully', 'data' => $branch->load('address', 'weekSchedule.daySchedules.slots')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     public function list(Request $request)
     {
         $startFrom = $request->input('pagination.start_from', 0);
         $pageSize  = $request->input('pagination.page_size', 100);
+        $searchText = $request->input('search_text');
 
-        // Dummy full data set
-        $dummyBranches = collect([
-            ['branch' => ['id' => 1, 'name' => 'Main Branch'], 'department_count' => 2, 'specializations_count' => 4, 'services_count' => 5],
-            ['branch' => ['id' => 2, 'name' => 'North Branch'], 'department_count' => 5, 'specializations_count' => 2, 'services_count' => 8],
-            ['branch' => ['id' => 3, 'name' => 'South Branch'], 'department_count' => 3, 'specializations_count' => 12, 'services_count' => 2],
-            ['branch' => ['id' => 4, 'name' => 'East Branch'], 'department_count' => 7, 'specializations_count' => 5, 'services_count' => 5],
-            ['branch' => ['id' => 5, 'name' => 'West Branch'], 'department_count' => 5, 'specializations_count' => 6, 'services_count' => 9],
-        ]);
+        // Build the query with relation
+        $query = Branch::with('address');
 
-        $total = $dummyBranches->count();
+        // Apply search filter if exists (partial match)
+        if (!empty($searchText)) {
+            $query->where('name', 'LIKE', '%' . $searchText . '%');
+        }
 
-        // Paginate manually from dummy array
-        $searchResponse = $dummyBranches
-            ->slice($startFrom)
+        // Get total before pagination
+        $total = $query->count();
+
+        // Apply pagination
+        $branches = $query
+            ->skip($startFrom)
             ->take($pageSize)
-            ->values();
+            ->get();
+
+        // Format response with dummy counts
+        $searchResponse = $branches->map(function ($branch) {
+            return [
+                'branch' => $branch,
+                'department_count' => 2,
+                'specializations_count' => 3,
+                'services_count' => 4,
+            ];
+        });
 
         return response()->json([
             'total_count'     => $total,
@@ -62,28 +132,6 @@ class BranchController extends BaseController
         return response()->json([
             'total_count' => $totalCount,
             'search_response' => $branches,
-        ]);
-    }
-
-    public function getCabinDetails(Request $request)
-    {
-        $onlyActive = $request->input('only_active', false);
-
-        // Dummy cabin list
-        $cabins = collect([
-            ['id' => 1, 'name' => 'Cabin A', 'active' => true],
-            ['id' => 2, 'name' => 'Cabin B', 'active' => false],
-            ['id' => 3, 'name' => 'Cabin C', 'active' => true],
-            ['id' => 4, 'name' => 'Cabin D', 'active' => true],
-        ]);
-
-        // Filter based on only_active flag
-        if ($onlyActive) {
-            $cabins = $cabins->where('active', true);
-        }
-
-        return response()->json([
-            'total_count' => $cabins->count(),
         ]);
     }
 
@@ -1284,5 +1332,476 @@ class BranchController extends BaseController
         }
 
         return response()->json($result);
+    }
+
+    public function createWing(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'wing_name' => 'required',
+            'id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $prev = Wing::select('id')->where('id', $request['id'])->first();
+
+        if ($prev) {
+            $prev->wing_name = $request['wing_name'];
+            $prev->save();
+        } else {
+            Wing::create([
+                'branch_id'       => $branchId,
+                'wing_name'       => $request['wing_name'],
+            ]);
+        }
+
+        return response()->json(['message' => 'Wing inserted successfully'], 201);
+    }
+
+    public function createBuilding(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'building_name' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $request->all();
+
+        foreach ($data as $building) {
+            Building::create([
+                'branch_id'       => $branchId,
+                'wing_name'       => $building['wing_name'] ?? null,
+                'building_name'   => $building['building_name'] ?? null,
+                'building_number' => $building['building_number'] ?? null,
+            ]);
+        }
+
+        return response()->json(['message' => 'Buildings inserted successfully'], 201);
+    }
+
+    public function updateBuilding(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'building_name' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $upd = Building::where('id', $request['building_id'])  // Fix the key name accordingly
+            ->update([
+                'building_name'   => $request['building_name'] ?? null,
+                'building_number' => $request['building_number'] ?? null,
+            ]);
+
+        return response()->json(['message' => 'Buildings updated successfully'], 201);
+    }
+
+    public function createBulkBuilding(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        $data = $request->all();
+
+        $validator = Validator::make([
+            'buildings' => $data
+        ], [
+            'buildings' => 'required|array',
+            'buildings.*.wing_name' => 'present',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        foreach ($data as $key => $building) {
+
+            if ($key == 0) {
+                $check = 1;
+                if (!isset($building['wing_name'])) {
+                    $wing = Wing::where('wing_name', 'NO WING')->where('branch_id', $branchId)->first();
+                    if ($wing) $check = 0;
+                }
+                if ($check) {
+                    $wing = Wing::create([
+                        'branch_id'       => $branchId,
+                        'wing_name'       => $building['wing_name'] ? $building['wing_name'] : 'NO WING',
+                    ]);
+                }
+            }
+
+            Building::create([
+                'branch_id'       => $branchId,
+                'wing_id'       => $wing->id,
+                'wing_name'       => $building['wing_name'] ?? 'NO WING',
+                'building_name'   => $building['building_name'] ?? null,
+                'building_number' => $building['building_number'] ?? null,
+            ]);
+        }
+
+
+        return response()->json(['message' => 'Buildings inserted successfully'], 201);
+    }
+
+    public function buildingSearch(Request $request)
+    {
+
+        if ($request['wing_name']) {
+            $buildingData = Building::with(['branch', 'wing'])
+                ->where('wing_name', $request['wing_name'])
+                ->get();
+        } else {
+            $buildingData = Building::with([
+                'branch',
+            ])->get();
+        }
+
+        return response()->json([
+            'total_count'     => $buildingData->count(),
+            'message' => 'successfully',
+            'search_response' => $buildingData,
+        ]);
+    }
+
+    public function buildingWingSearch(Request $request)
+    {
+
+        $wingData = Wing::with([
+            'branch',
+            'buildings'
+        ])->get();
+
+        // $companyData->each(function ($company) {
+        //     $company->setAttribute('beneficiary', $company->details);
+        //     $company->setAttribute('name', $company->legal_facility_name);
+        //     unset($company->details);
+        // });
+
+        return response()->json([
+            'total_count'     => $wingData->count(),
+            'message' => 'successfully',
+            'search_response' => $wingData,
+        ]);
+    }
+
+    public function floorSearch(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'building_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $floorData = Floor::with(['building'])
+            ->where('building_id', $request['building_id'])
+            ->get();
+
+        return response()->json([
+            'total_count'     => $floorData->count(),
+            'message' => 'successfully',
+            'search_response' => $floorData,
+        ]);
+    }
+
+    public function createFloor(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        if ($request->isMethod('put')) {
+
+            $validator = Validator::make($request->all(), [
+                'building_id' => 'required',
+                'floor_name' => 'required',
+                'floor_id' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            Floor::where('id', $request['floor_id'])  // Fix the key name accordingly
+                ->update([
+                    'floor_name'   => $request['floor_name'] ?? null,
+                    'floor_number' => $request['floor_number'] ?? null,
+                ]);
+
+            $id = $request['floor_id'];
+        } else {
+
+            $validator = Validator::make($request->all(), [
+                'building_id' => 'required',
+                'floor_name' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $cr = Floor::create([
+                'branch_id'       => $branchId,
+                'building_id'       => $request['building_id'] ?? null,
+                'floor_name'   => $request['floor_name'] ?? null,
+                'floor_number' => $request['floor_number'] ?? null,
+            ]);
+
+            $id = $cr->id;
+        }
+
+        $floorData = Floor::with(['building'])
+            ->where('id', $id)
+            ->first();
+
+        return response()->json(['data' => $floorData], $request->isMethod('put') ? 202 : 201);
+    }
+
+    public function roomSearch(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'floor_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $roomData = Room::with(['floor'])
+            ->where('floor_id', $request['floor_id'])
+            ->get();
+
+        return response()->json([
+            'total_count'     => $roomData->count(),
+            'message' => 'successfully',
+            'search_response' => $roomData,
+        ]);
+    }
+
+    public function createRoom(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        if ($request->isMethod('put')) {
+
+            $validator = Validator::make($request->all(), [
+                'floor_id' => 'required',
+                'room_name' => 'required',
+                'room_id' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            Room::where('id', $request['room_id'])  // Fix the key name accordingly
+                ->update([
+                    'room_name'   => $request['room_name'] ?? null,
+                    'room_number' => $request['room_number'] ?? null,
+                ]);
+
+            $id = $request['room_id'];
+        } else {
+
+            $validator = Validator::make($request->all(), [
+                'floor_id' => 'required',
+                'room_name' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $cr = Room::create([
+                'branch_id'       => $branchId,
+                'floor_id'       => $request['floor_id'] ?? null,
+                'room_name'   => $request['room_name'] ?? null,
+                'room_number' => $request['room_number'] ?? null,
+            ]);
+
+            $id = $cr->id;
+
+
+            $floorData = Room::with(['floor'])
+                ->where('id', $id)
+                ->first();
+
+            return response()->json(['data' => $floorData], $request->isMethod('put') ? 202 : 201);
+        }
+    }
+
+    public function cabinSearch(Request $request)
+    {
+
+        if (isset($request['room_id'])) {
+            $cabinData = Cabin::with(['room'])
+                ->where('room_id', $request['room_id'])
+                ->get();
+        } else {
+            $branchId = $request->header('X-TREINT-BRANCH-ID');
+            $cabinData = Cabin::with(['room'])->where('branch_id', $branchId)->get();
+        }
+
+
+        return response()->json([
+            'total_count'     => $cabinData->count(),
+            'message' => 'successfully',
+            'search_response' => $cabinData,
+        ]);
+    }
+
+    public function createCabin(Request $request)
+    {
+
+        $branchId = $request->header('X-TREINT-BRANCH-ID');
+
+        if (!$branchId) {
+            return response()->json([
+                'message' => 'Branch Id not found',
+                'status' => false
+            ], 422);
+        }
+
+        if ($request->isMethod('put')) {
+
+            $validator = Validator::make($request->all(), [
+                'room_id' => 'required',
+                'cabin_name' => 'required',
+                'cabin_id' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            Cabin::where('id', $request['cabin_id'])  // Fix the key name accordingly
+                ->update([
+                    'cabin_name'   => $request['cabin_name'] ?? null,
+                    'cabin_number' => $request['cabin_number'] ?? null,
+                ]);
+
+            $id = $request['cabin_id'];
+        } else {
+
+            $validator = Validator::make($request->all(), [
+                'room_id' => 'required',
+                'cabin_name' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $cr = Cabin::create([
+                'branch_id'       => $branchId,
+                'room_id'       => $request['room_id'] ?? null,
+                'cabin_name'   => $request['cabin_name'] ?? null,
+                'cabin_number' => $request['cabin_number'] ?? null,
+            ]);
+
+            $id = $cr->id;
+        }
+
+        $cabinData = Cabin::with(['room'])
+            ->where('id', $id)
+            ->first();
+
+        return response()->json(['data' => $cabinData], $request->isMethod('put') ? 202 : 201);
     }
 }

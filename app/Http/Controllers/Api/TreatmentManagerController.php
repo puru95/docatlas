@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\GuestPatient;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TreatmentManagerController extends Controller
@@ -18,7 +19,7 @@ class TreatmentManagerController extends Controller
 
         for ($i = 0; $i < 10; $i++) {
             $appointmentId = Str::uuid()->toString();
-            $patientId = Str::uuid()->toString();
+            $patientId = "patient_" . md5($i . Str::uuid()->toString());
             $timestamp = now()->subMinutes($i * 30);
             $timestampInMilliseconds = $timestamp->timestamp * 1000;
 
@@ -38,7 +39,7 @@ class TreatmentManagerController extends Controller
                 ],
                 'patient_image' => null,
                 'appointment_id' => $appointmentId,
-                'otpVerified' => (bool) rand(0, 1),
+                'otpVerified' => 1,
                 'vitalSignUpdated' => 1,
                 'appointment_status' => $i % 2 === 0 ? 'APPOINTMENT_STARTED' : 'COMPLETED',
                 'service_type' => $i % 2 === 0 ? 'Consultation' : 'Follow-up',
@@ -208,7 +209,7 @@ class TreatmentManagerController extends Controller
             'age.unit' => 'required|in:YEAR,MONTH',
             'age.value' => 'required|integer|min:0',
             'survey_name' => 'required|string', // validated but not stored unless needed
-            'mobile_number' => 'required|string',
+            // 'mobile_number' => 'required|string',
             'country_code' => 'required|string',
             'source_type' => 'required|string',
             'source_id' => 'required|uuid',
@@ -231,7 +232,7 @@ class TreatmentManagerController extends Controller
                 'unit' => $request->input('age.unit'),
                 'value' => $request->input('age.value')
             ],
-            'mobile_number' => $request->mobile_number,
+            'mobile_number' => '9999999999',
             'country_code' => $request->country_code,
             'source_type' => $request->source_type,
             'source_id' => $request->source_id,
@@ -243,5 +244,48 @@ class TreatmentManagerController extends Controller
             'message' => 'Guest patient created successfully',
             'id' => $guestInfo->id,
         ], 201);
+    }
+
+    public function storee(Request $request)
+    {
+
+        $data = [
+            'planData' => $request['planData'],
+            'symptoms' => $request['symptoms'],
+            'treatmentPlan' => $request['treatmentPlan']
+        ];
+
+        $id = $request['id'];
+
+        $jsonData = json_encode($data, JSON_PRETTY_PRINT);
+
+        Storage::disk('public')->put("$id.json", $jsonData);
+
+        return response()->json([
+            'message' => 'Treatment Plan created successfully',
+            'sucess' => true,
+        ], 201);
+    }
+
+    public function getTreatmentData(Request $request)
+    {
+        // Path to JSON file in storage
+        $id = $request['id'];
+        $path = "$id.json";
+
+        if (!Storage::disk('public')->exists($path)) {
+            return response()->json(['error' => 'Fisle not found'.$id], 404);
+        }
+
+        // Read file content
+        $jsonContent = Storage::disk('public')->get($path);
+
+        // Convert to PHP array
+        $data = json_decode($jsonContent, true);
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
     }
 }

@@ -55,6 +55,46 @@ class DocumentController extends Controller
         ]);
     }
 
+    public function uploadDocImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'imageMultipartFile' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // $documentData = json_decode($request->document, true);
+
+        $file = $request->file('imageMultipartFile');
+        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+        $filePath = $file->storeAs('uploads/images', $filename, 'public');
+
+        // Store record in DB
+        $document = Document::create([
+            'file_name' => $filename,
+            'file_path' => $filePath,
+            'mime_type' => $file->getMimeType(),
+            // 'entity_type' => '',
+            // 'entity_id' => '',
+        ]);
+
+        $encId = $this->shortEncrypt($document->id);
+        $document->user_id = $encId;
+        $document->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Image uploaded and saved successfully',
+            'id' => $encId,
+            'file_url' => Storage::url($filePath),
+        ]);
+    }
+
     public function getDocumentsByIds(Request $request)
     {
         $docs = $request->input('entity_ids_list', "");
