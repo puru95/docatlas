@@ -88,15 +88,19 @@ class BranchController extends BaseController
         $total = $query->count();
 
         // Apply pagination
-        $branches = $query
-            ->skip($startFrom)
-            ->take($pageSize)
-            ->get();
+        // $branches = $query
+        //     ->skip($startFrom)
+        //     ->take($pageSize)
+        //     ->get();
 
-        // Format response with dummy counts
-        $searchResponse = $branches->map(function ($branch) {
+        $branches = [
+            ["branch" => "abd"]
+        ];
+        
+        // Convert array to collection
+        $searchResponse = collect($branches)->map(function ($branch) {
             return [
-                'branch' => $branch,
+                'branch' => $branch['branch'],
                 'department_count' => 2,
                 'specializations_count' => 3,
                 'services_count' => 4,
