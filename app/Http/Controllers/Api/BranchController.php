@@ -77,15 +77,15 @@ class BranchController extends BaseController
         $searchText = $request->input('search_text');
 
         // Build the query with relation
-        // $query = Branch::with('address');
+        $query = Branch::with('address');
 
         // Apply search filter if exists (partial match)
-        // if (!empty($searchText)) {
-        //     $query->where('name', 'LIKE', '%' . $searchText . '%');
-        // }
+        if (!empty($searchText)) {
+            $query->where('name', 'LIKE', '%' . $searchText . '%');
+        }
 
         // Get total before pagination
-        $total = 1;
+        $total = $query->count();
 
         // Apply pagination
         // $branches = $query
